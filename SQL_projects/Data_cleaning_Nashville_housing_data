@@ -1,0 +1,168 @@
+/*
+Cleaning data in SQl queries
+*/
+
+select * from public.nashville_housing_data
+
+-- Standardize columns format and empy values 
+
+-- saledate
+
+select nhd.saledate,nhd.saledate::date as saledate  from public.nashville_housing_data nhd;
+
+update public.nashville_housing_data
+set saledate = saledate::date
+
+alter table public.nashville_housing_data
+alter column saledate type date using saledate::date
+
+-- parcelid
+
+select parcelid,parcelid::varchar  from public.nashville_housing_data;
+
+update public.nashville_housing_data
+set parcelid = parcelid::varchar 
+
+alter table public.nashville_housing_data
+alter column parcelid type varchar using parcelid::varchar 
+
+-- propertyaddress 
+
+select nhd_a.parcelid, nhd_a.propertyaddress, nhd_b.parcelid,nhd_b.propertyaddress, COALESCE(nhd_a.propertyaddress,nhd_b.propertyaddress)
+from public.nashville_housing_data nhd_a
+join public.nashville_housing_data nhd_b
+on nhd_a.parcelid = nhd_b.parcelid
+and nhd_a.uniqueid <> nhd_b.uniqueid
+where nhd_a.propertyaddress is null
+
+
+update nashville_housing_data nhd_c
+set propertyaddress = COALESCE(nhd_a.propertyaddress,nhd_b.propertyaddress)
+from public.nashville_housing_data as nhd_a
+join public.nashville_housing_data as nhd_b
+on nhd_a.parcelid = nhd_b.parcelid
+and nhd_a.uniqueid <> nhd_b.uniqueid
+where nhd_c.propertyaddress is null
+
+-- Breaking out address into individual columns (address, city, state)
+
+select 
+substring(propertyaddress,1,strpos(propertyaddress,',')-1) as address,
+substring(propertyaddress,strpos(propertyaddress,',')+2,LENGTH(propertyaddress)) as city
+from public.nashville_housing_data 
+
+alter table public.nashville_housing_data
+add column address varchar(255)
+
+update public.nashville_housing_data
+set address = substring(propertyaddress,1,strpos(propertyaddress,',')-1)
+
+alter table public.nashville_housing_data
+add column city varchar(255)
+
+update public.nashville_housing_data
+set city = substring(propertyaddress,strpos(propertyaddress,',')+2,LENGTH(propertyaddress))
+
+-- saleprice
+
+select
+replace(replace(saleprice,',',''),'$','') as saleprice
+from public.nashville_housing_data
+
+alter table public.nashville_housing_data
+add column sale_price numeric
+
+update public.nashville_housing_data
+set sale_price = replace(replace(saleprice,',',''),'$','')::numeric
+
+
+-- legalreference
+
+update public.nashville_housing_data
+set legalreference = legalreference::varchar 
+
+alter table public.nashville_housing_data
+alter column legalreference type varchar using legalreference::varchar 
+
+-- owneraddress
+
+select
+SPLIT_PART(owneraddress,',',1),
+replace(SPLIT_PART(owneraddress,',',2),' ',''),
+replace(SPLIT_PART(owneraddress,',',3),' ','')
+from public.nashville_housing_data
+
+alter table public.nashville_housing_data
+add column owner_address varchar(255)
+
+update public.nashville_housing_data
+set owner_address = SPLIT_PART(owneraddress,',',1)
+
+alter table public.nashville_housing_data
+add column owner_city varchar(255)
+
+update public.nashville_housing_data
+set owner_city = replace(SPLIT_PART(owneraddress,',',2),' ','')
+
+alter table public.nashville_housing_data
+add column owner_state varchar(255)
+
+update public.nashville_housing_data
+set owner_state = replace(SPLIT_PART(owneraddress,',',3),' ','')
+
+-- change Y and N to Yes and No in "soldasvacant" fild
+
+
+select distinct(soldasvacant),count(soldasvacant)
+from public.nashville_housing_data
+group by 1
+order by 2
+
+select distinct(soldasvacant),count(soldasvacant) from (
+select 
+case
+when soldasvacant = 'Y' then 'Yes'
+when soldasvacant = 'N' then 'No'
+else soldasvacant
+end as soldasvacant
+from public.nashville_housing_data) as new_info
+group by 1
+order by 2
+
+update public.nashville_housing_data
+set soldasvacant = (
+case
+when soldasvacant = 'Y' then 'Yes'
+when soldasvacant = 'N' then 'No'
+else soldasvacant
+end
+)
+
+-- remove duplicates
+with info_duplicate as (
+select *,
+row_number() over (
+	partition by (parcelid, propertyaddress,saledate,sale_price,legalreference)
+) row_numb
+from public.nashville_housing_data), duplicates_values as (
+select * from info_duplicate
+	where row_numb > 1
+)
+delete 
+from public.nashville_housing_data nhd 
+using info_duplicate idd
+where (nhd.uniqueid = idd.uniqueid and 
+	   idd.row_numb >=2
+	  )
+
+
+-- Delete unused columns
+
+
+select * from public.nashville_housing_data
+
+alter table public.nashville_housing_data
+drop column propertyaddress,
+drop column saleprice,
+drop column owneraddress
+
