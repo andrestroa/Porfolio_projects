@@ -9,6 +9,7 @@ The repository is divided into 3 sections, one for projects with Python, mainly 
 - [Python projects](https://github.com/andrestroa/Portfolio_projects/tree/main/Python_projects)
 - [SQL projects](https://github.com/andrestroa/Portfolio_projects/tree/main/SQL_projects)
 - [Tableau projects](https://public.tableau.com/app/profile/andres6452)
+- [Pipelines projects](https://github.com/andrestroa/Portfolio_projects/tree/main/Pipelines_projects)
 
 ## Content of each project
 
