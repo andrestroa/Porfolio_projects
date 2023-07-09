@@ -2,7 +2,7 @@
 
 In this repository there are projects dedicated to tools that are used in the field of data analysis, such as Python, SQL and interactive analysis tools. (More projects with new tools will be released later).
 
-[![My Skills](https://skills.thijs.gg/icons?i=postgres,py)](https://skills.thijs.gg)
+[![My Skills](https://skills.thijs.gg/icons?i=postgres,py,git,mysql,bash,linux)](https://skills.thijs.gg)
 
 The repository is divided into 3 sections, one for projects with Python, mainly to generate analysis, insights, etc, then there are the SQL projects, these are also focused on data analysis but mainly on the ETL process and finally there are projects using interactive data visualization tools, such as Tableau or Google Data studio.
 
